@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Food Near You | Second Harvest Food Bank of NWNC</title>
+<meta name="description" content="Find free food pantries, soup kitchens, and shelters near you in Northwest North Carolina. Search by zip code to locate food assistance programs.">
+<meta property="og:title" content="Find Food Near You | Second Harvest Food Bank">
+<meta property="og:description" content="Locate free food pantries, soup kitchens, and shelters in Northwest North Carolina.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://foodfinder.secondharvestnwnc.org">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://foodfinder.secondharvestnwnc.org">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCKozAaMHuCLx6UoPVg7oxbiSLn6HxThzA"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy-900: #141e47;
+    --navy-800: #1a275a;
+    --navy-700: #1e2f6c;
+    --navy-600: #2a3d7c;
+    --navy-100: #e8ebf4;
+    --navy-50: #f1f3f9;
+    --sh-red: #c53030;
+    --sh-red-hover: #d43d3d;
+    --sh-red-100: #fde8e8;
+    --green-700: #276749;
+    --green-600: #2d8c4e;
+    --green-500: #38a169;
+    --green-100: #e6f4ed;
+    --green-50: #f0faf5;
+    --orange-600: #dd6b20;
+    --orange-500: #ed8936;
+    --orange-100: #feebc8;
+    --blue-600: #2b6cb0;
+    --blue-100: #dbeafe;
+    --gray-50: #fafafa;
+    --gray-100: #f4f4f5;
+    --gray-200: #e4e4e7;
+    --gray-300: #d4d4d8;
+    --gray-500: #71717a;
+    --gray-600: #52525b;
+    --gray-700: #3f3f46;
+    --gray-800: #27272a;
+    --gray-900: #18181b;
+    --radius: 10px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,.12);
+  }
+
+  html, body {
+    height: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 100%);
+    color: white;
+    padding: 1.75rem 1.5rem 1.25rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -40%; right: -10%;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,.04) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .header-brand {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    opacity: .7;
+    margin-bottom: .35rem;
+    position: relative;
+  }
+  .header h1 {
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-weight: 800;
+    font-weight: 800;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    letter-spacing: -0.02em;
+    margin-bottom: .35rem;
+    position: relative;
+  }
+  .header p {
+    font-size: .95rem;
+    opacity: .75;
+    max-width: 500px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* ── SEARCH BAR ── */
+  .search-section {
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+    padding: 1.25rem 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: var(--shadow-sm);
+  }
+  .search-row {
+    display: flex;
+    gap: .75rem;
+    max-width: 720px;
+    margin: 0 auto;
+    align-items: stretch;
+  }
+  .search-input-wrap {
+    flex: 1;
+    position: relative;
+  }
+  .search-input-wrap svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-500);
+  }
+  .search-input {
+    width: 100%;
+    padding: .75rem .75rem .75rem 42px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color .2s;
+    background: var(--gray-50);
+  }
+  .search-input:focus {
+    outline: none;
+    border-color: var(--navy-600);
+    background: white;
+  }
+  .search-input::placeholder { color: var(--gray-500); }
+
+  .radius-select {
+    padding: .75rem 1rem;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    font-size: .95rem;
+    font-family: inherit;
+    background: var(--gray-50);
+    color: var(--gray-700);
+    cursor: pointer;
+    min-width: 110px;
+  }
+  .radius-select:focus { outline: none; border-color: var(--navy-600); }
+
+  .search-btn {
+    padding: .75rem 1.5rem;
+    background: var(--sh-red);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-weight: 800;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+    white-space: nowrap;
+  }
+  .search-btn:hover { background: var(--sh-red-hover); }
+  .search-btn:active { transform: scale(.97); }
+
+  /* ── FILTERS ── */
+  .filters {
+    display: flex;
+    gap: .5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 720px;
+    margin: .85rem auto 0;
+  }
+  .filter-chip {
+    padding: .4rem 1rem;
+    border-radius: 100px;
+    border: 2px solid var(--gray-200);
+    background: white;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+  .filter-chip:hover { border-color: var(--gray-300); }
+  .filter-chip.active { border-color: transparent; color: white; }
+  .filter-chip[data-type="PANTRY"].active { background: var(--green-600); }
+  .filter-chip[data-type="SOUP KITCHEN"].active { background: var(--orange-600); }
+  .filter-chip[data-type="SHELTER"].active { background: var(--blue-600); }
+  .filter-chip[data-type="ALL"].active { background: var(--navy-800); }
+  .filter-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .filter-chip.active .filter-dot { background: rgba(255,255,255,.5); }
+  .dot-pantry { background: var(--green-600); }
+  .dot-soup { background: var(--orange-600); }
+  .dot-shelter { background: var(--blue-600); }
+  .dot-all { background: var(--navy-800); }
+
+  /* ── LAYOUT ── */
+  .main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── MAP ── */
+  .map-container {
+    position: relative;
+    height: 50vh;
+    min-height: 400px;
+  }
+  #map { width: 100%; height: 100%; }
+
+  /* ── RESULTS PANEL ── */
+  .results-panel {
+    background: var(--gray-50);
+    border-top: 3px solid var(--navy-800);
+  }
+  .results-header {
+    padding: 1.1rem 1.5rem;
+    background: var(--navy-800);
+    color: white;
+    text-align: center;
+  }
+  .results-count {
+    font-weight: 700;
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    color: white;
+    font-size: 1.05rem;
+  }
+  .results-list {
+    padding: 1.25rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: .85rem;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1rem 1.15rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+    cursor: pointer;
+    transition: box-shadow .2s, border-color .2s;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--navy-600);
+  }
+  .card.active {
+    border-color: var(--navy-700);
+    box-shadow: 0 0 0 2px var(--navy-100), var(--shadow-md);
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: .75rem;
+    margin-bottom: .5rem;
+  }
+  .card-name {
+    font-weight: 700;
+    font-size: .95rem;
+    color: var(--gray-900);
+    line-height: 1.3;
+  }
+  .card-badge {
+    font-size: .7rem;
+    font-weight: 700;
+    padding: .2rem .6rem;
+    border-radius: 100px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .badge-pantry { background: var(--green-100); color: var(--green-700); }
+  .badge-soup { background: var(--orange-100); color: var(--orange-600); }
+  .badge-shelter { background: var(--blue-100); color: var(--blue-600); }
+  .badge-combo { background: var(--green-100); color: var(--green-700); }
+
+  .card-detail {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    font-size: .85rem;
+    color: var(--gray-600);
+    margin-bottom: .3rem;
+  }
+  .card-detail svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--gray-500);
+  }
+  .card-distance {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--navy-700);
+    margin-top: .5rem;
+  }
+  .card-phone a {
+    color: var(--navy-700);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .card-phone a:hover { text-decoration: underline; }
+  .card-directions {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-top: .6rem;
+    padding: .35rem .75rem;
+    background: var(--navy-50);
+    color: var(--navy-800);
+    border-radius: 6px;
+    font-size: .8rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .2s;
+  }
+  .card-directions:hover { background: var(--navy-100); }
+
+  /* ── SHOW MORE ── */
+  .show-more-wrap {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 1rem 0 .5rem;
+  }
+  .show-more-btn {
+    padding: .7rem 2rem;
+    background: var(--navy-800);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: .95rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+  }
+  .show-more-btn:hover { background: var(--navy-700); }
+  .show-more-btn:active { transform: scale(.97); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--gray-500);
+  }
+  .empty-state svg { margin-bottom: 1rem; opacity: .4; }
+  .empty-state h3 {
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-weight: 800;
+    color: var(--gray-700);
+    margin-bottom: .5rem;
+  }
+
+  /* ── LEAFLET CUSTOM ── */
+  .custom-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .marker-pin {
+    width: 32px; height: 32px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    border: 2px solid white;
+  }
+  .marker-pin.pantry { background: var(--green-600); }
+  .marker-pin.soup { background: var(--orange-500); }
+  .marker-pin.shelter { background: var(--blue-600); }
+  .marker-pin.combo { background: var(--green-600); }
+  .marker-inner {
+    transform: rotate(45deg);
+    font-size: 14px;
+    color: white;
+  }
+
+  .leaflet-popup-content-wrapper {
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow-lg) !important;
+    padding: 0 !important;
+  }
+  .leaflet-popup-content {
+    margin: 0 !important;
+    min-width: 220px;
+  }
+  .popup-inner {
+    padding: .85rem 1rem;
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  }
+  .popup-inner h4 {
+    font-size: .9rem;
+    font-weight: 700;
+    margin-bottom: .4rem;
+    color: var(--gray-900);
+  }
+  .popup-inner p {
+    font-size: .8rem;
+    color: var(--gray-600);
+    margin-bottom: .2rem;
+  }
+
+  /* ── LOADING ── */
+  .loading-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--navy-700);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--navy-900);
+    color: white;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    border-top: 3px solid var(--sh-red);
+  }
+  .footer-inner {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .footer-brand {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: .2rem;
+  }
+  .footer-sub {
+    font-size: .85rem;
+    opacity: .6;
+    margin-bottom: 1rem;
+  }
+  .footer-links {
+    margin-bottom: 1rem;
+  }
+  .footer-links a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: .9rem;
+    opacity: .85;
+    transition: opacity .2s;
+  }
+  .footer-links a:hover { opacity: 1; text-decoration: underline; }
+  .footer-divider {
+    margin: 0 .75rem;
+    opacity: .3;
+  }
+  .footer-note {
+    font-size: .82rem;
+    opacity: .55;
+    line-height: 1.5;
+  }
+
+  /* ── LANGUAGE TOGGLE ── */
+  .lang-toggle {
+    position: absolute;
+    top: 1rem;
+    right: 1.25rem;
+    display: flex;
+    background: rgba(255,255,255,.12);
+    border-radius: 100px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.2);
+  }
+  .lang-btn {
+    padding: .35rem .85rem;
+    font-size: .78rem;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,.6);
+    cursor: pointer;
+    transition: all .2s;
+    font-family: inherit;
+    letter-spacing: .03em;
+  }
+  .lang-btn.active {
+    background: rgba(255,255,255,.2);
+    color: white;
+  }
+  .lang-btn:hover:not(.active) {
+    color: rgba(255,255,255,.85);
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    .map-container {
+      height: 40vh;
+      min-height: 280px;
+    }
+    .results-list {
+      grid-template-columns: 1fr;
+      padding: .75rem;
+    }
+    .search-row { flex-wrap: wrap; }
+    .search-input-wrap { min-width: 100%; }
+    .radius-select { flex: 1; }
+    .search-btn { flex: 1; }
+    .header { padding: 1.25rem 1rem 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('es')">ES</button>
+  </div>
+  <div class="header-brand" id="headerBrand">Second Harvest Food Bank of Northwest North Carolina</div>
+  <h1 id="headerTitle">Find Food Near You</h1>
+  <p id="headerSub">Locate free food pantries, soup kitchens, and shelters in our service area</p>
+</div>
+
+<div class="search-section">
+  <div class="search-row">
+    <div class="search-input-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" class="search-input" id="zipInput" placeholder="Enter your zip code" maxlength="5" inputmode="numeric" pattern="[0-9]*" aria-label="Zip code">
+    </div>
+    <select class="radius-select" id="radiusSelect" aria-label="Search radius">
+      <option value="5">5 miles</option>
+      <option value="10" selected>10 miles</option>
+      <option value="25">25 miles</option>
+      <option value="50">50 miles</option>
+      <option value="999">Show all</option>
+    </select>
+    <button class="search-btn" id="searchBtn" onclick="performSearch()">Search</button>
+  </div>
+  <div class="filters" id="filters">
+    <button class="filter-chip active" data-type="ALL" onclick="setFilter('ALL')">
+      <span class="filter-dot dot-all"></span> All Programs
+    </button>
+    <button class="filter-chip" data-type="PANTRY" onclick="setFilter('PANTRY')">
+      <span class="filter-dot dot-pantry"></span> Pantry
+    </button>
+    <button class="filter-chip" data-type="SOUP KITCHEN" onclick="setFilter('SOUP KITCHEN')">
+      <span class="filter-dot dot-soup"></span> Soup Kitchen
+    </button>
+    <button class="filter-chip" data-type="SHELTER" onclick="setFilter('SHELTER')">
+      <span class="filter-dot dot-shelter"></span> Shelter
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="map-container">
+    <div id="map"></div>
+  </div>
+  <div class="results-panel">
+    <div class="results-header">
+      <span class="results-count" id="resultsCount">Loading programs...</span>
+    </div>
+    <div class="results-list" id="resultsList"></div>
+  </div>
+</div>
+
+<script>
+// ── TRANSLATIONS ──
+const T = {
+  en: {
+    brand: 'Second Harvest Food Bank of Northwest North Carolina',
+    title: 'Find Food Near You',
+    subtitle: 'Locate free food pantries, soup kitchens, and shelters in our service area',
+    placeholder: 'Enter your zip code',
+    miles5: '5 miles', miles10: '10 miles', miles25: '25 miles', miles50: '50 miles', showAll: 'Show all',
+    search: 'Search',
+    allPrograms: 'All Programs', pantry: 'Pantry', soupKitchen: 'Soup Kitchen', shelter: 'Shelter',
+    locationsFound: (n) => `${n} location${n !== 1 ? 's' : ''} found`,
+    noResults: 'No results found',
+    noResultsTip: 'Try a different zip code, increase the search radius, or change the filter.',
+    milesAway: (d) => `${d} miles away`,
+    getDirections: 'Get Directions',
+    showMore: (n, total) => `Show ${n} More of ${total} Results`,
+    badZip: 'Please enter a valid 5-digit zip code.',
+    zipNotFound: 'Zip code not found. Please try a nearby zip code.',
+    zipError: 'Could not look up that zip code. Please try a zip code in Northwest NC.',
+    typePantry: 'PANTRY', typeSoup: 'SOUP KITCHEN', typeShelter: 'SHELTER', typeCombo: 'PANTRY / SOUP KITCHEN',
+    footerNote: 'If you need immediate food assistance, please call 211 or visit one of the locations listed above.'
+  },
+  es: {
+    brand: 'Banco de Alimentos Second Harvest del Noroeste de Carolina del Norte',
+    title: 'Encuentre Comida Cerca de Usted',
+    subtitle: 'Localice despensas de alimentos, comedores comunitarios y refugios gratuitos en nuestra zona de servicio',
+    placeholder: 'Ingrese su código postal',
+    miles5: '5 millas', miles10: '10 millas', miles25: '25 millas', miles50: '50 millas', showAll: 'Mostrar todo',
+    search: 'Buscar',
+    allPrograms: 'Todos los Programas', pantry: 'Despensa', soupKitchen: 'Comedor', shelter: 'Refugio',
+    locationsFound: (n) => `${n} ubicación${n !== 1 ? 'es' : ''} encontrada${n !== 1 ? 's' : ''}`,
+    noResults: 'No se encontraron resultados',
+    noResultsTip: 'Intente con otro código postal, aumente el radio de búsqueda o cambie el filtro.',
+    milesAway: (d) => `${d} millas de distancia`,
+    getDirections: 'Cómo Llegar',
+    showMore: (n, total) => `Mostrar ${n} Más de ${total} Resultados`,
+    badZip: 'Por favor ingrese un código postal válido de 5 dígitos.',
+    zipNotFound: 'Código postal no encontrado. Intente con un código postal cercano.',
+    zipError: 'No se pudo buscar ese código postal. Intente con un código postal del noroeste de NC.',
+    typePantry: 'DESPENSA', typeSoup: 'COMEDOR', typeShelter: 'REFUGIO', typeCombo: 'DESPENSA / COMEDOR',
+    footerNote: 'Si necesita asistencia alimentaria inmediata, llame al 211 o visite una de las ubicaciones listadas arriba.'
+  }
+};
+let lang = 'en';
+function t(key) { return T[lang][key]; }
+// ── DATA ──
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CONFIGURATION: Set your Suitelet URL here                  ║
+// ║  Find this URL in NetSuite after deploying the script.      ║
+// ║  It looks like: https://ACCOUNTID.restlets.api.netsuite.com/app/site/hosting/scriptlet.nl?script=123&deploy=1  ║
+// ╚══════════════════════════════════════════════════════════════╝
+const SUITELET_URL = 'https://9683739.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1785&deploy=1&compid=9683739&ns-at=AAEJ7tMQ0z1cVFpCW6jEqy0ccM1VEsNn-Yp9JYlBBnDTaPTKbvw';
+
+// Fallback data (used if Suitelet is unavailable or not yet configured)
+const FALLBACK_DATA = [{"n":"ARCAP Community Action Agency","a":"142 S. Lexington Ave","c":"Burlington","z":"27216","p":"336.229.7031","t":"PANTRY","h":"Mon: 9a-4:30","lat":36.07816,"lng":-79.43313},{"n":"Allied Churches of Alamance County","a":"206 N Fisher Street","c":"Burlington","z":"27217","p":"336.229.0881","t":"SHELTER","h":"Please call for availability","lat":36.11099,"lng":-79.42387},{"n":"Allied Churches of Alamance County","a":"206 N Fisher Street","c":"Burlington","z":"27217","p":"336.229.0881","t":"SOUP KITCHEN","h":"M - F: 11:30a - 1p (Lunch); M - F: 6:30p - 7:30p (Dinner)","lat":36.11099,"lng":-79.42387},{"n":"Amos of Alamance","a":"617 Rauhut St","c":"Burlington","z":"27217","p":"336.227.2542","t":"PANTRY","h":"Tu: 10a - 1p (1st & 3rd Tuesday)","lat":36.11486,"lng":-79.42226},{"n":"Blessed Sacrament - Little Portion Food Pantry","a":"328 W Davis St.","c":"Burlington","z":"27215","p":"336.226.8796","t":"PANTRY","h":"Mon: 10am - 12p","lat":36.0638,"lng":-79.47063},{"n":"Burlington Assembly of God: The Caring Kitchen","a":"903 Tucker St","c":"Burlington","z":"27215","p":"336.227.3434","t":"SOUP KITCHEN","h":"Sa: 11:30a - 12:30p; Su: 12:30p - 1:30p","lat":36.0632,"lng":-79.47307},{"n":"Ebenezer UCC Food Pantry: King's Cupboard","a":"734 Apple St.","c":"Burlington","z":"27217","p":"336.226.8526","t":"PANTRY","h":"M - Th: 9a-4p","lat":36.10855,"lng":-79.41467},{"n":"Fresh Manna Food Ministries","a":"1410 Elderway","c":"Burlington","z":"27215","p":"336.350.9045","t":"PANTRY","h":"Tue & Th: 10:00a - 11:30a","lat":36.06246,"lng":-79.47189},{"n":"Harvest Baptist Church","a":"3741 S Church St","c":"Burlington","z":"27215","p":"336.584.3333","t":"PANTRY","h":"W: 9a - 10a","lat":36.0707,"lng":-79.48165},{"n":"Piedmont Rescue Mission","a":"1519 N Mebane St","c":"Burlington","z":"27217","p":"336.229.6995","t":"PANTRY","h":"Tu & Th: 1p - 3p (Appt. Only)","lat":36.10523,"lng":-79.41844},{"n":"The Salvation Army - Alamance","a":"812 N. Anthony Street","c":"Burlington","z":"27217","p":"336.227.5529","t":"PANTRY","h":"M, Wed, & F: 1p - 3p","lat":36.1046,"lng":-79.41811},{"n":"Trinity Worship Center","a":"3157 S Church Street","c":"Burlington","z":"27215","p":"336.585.0605","t":"PANTRY","h":"F: 10a - 11a (except on the 5th Friday of a month)","lat":36.06375,"lng":-79.47139},{"n":"The RCCG Restoration","a":"1214 Maple Ave","c":"Burlington","z":"27215","p":"336.809.6565","t":"PANTRY","h":"2nd Sa 2p-4p","lat":36.0659,"lng":-79.48191},{"n":"Elon First Baptist Church","a":"113 Lynn St","c":"Elon","z":"27244","p":"336.584.5657","t":"PANTRY","h":"3rd Thursday of month 11a - 1p","lat":36.10524,"lng":-79.50095},{"n":"Burnett's Chapel Christian Church","a":"1957 Burnett's Church Rd","c":"Graham","z":"27253","p":"336.525.2114","t":"PANTRY","h":"Sa: 9a - 11:30a (3rd Saturday of each month)","lat":36.07483,"lng":-79.39389},{"n":"DreamAlign Ministries","a":"124 East Pine Street","c":"Graham","z":"27253","p":"336.270.5238","t":"PANTRY","h":"M: 10a - 12p & 7p - 9p; F: 10a - 2p","lat":36.06934,"lng":-79.38832},{"n":"S.A.F.E - Southern Alamance Family Empowerment","a":"5950 US 89 S","c":"Graham","z":"27340","p":"336.525.2120","t":"PANTRY","h":"Tu & Sa: 9a - 12p (Appt. Only)","lat":36.04034,"lng":-79.35515},{"n":"S.A.F.E. @ The Bridge","a":"615 W. Harden St.","c":"Graham","z":"27340","p":"336.525.2120","t":"PANTRY","h":"Th (4p-6p) (Appt. Only)","lat":36.04633,"lng":-79.34028},{"n":"Stone Soup Menus, INC","a":"1307 E. Main St.","c":"Graham","z":"27253","p":"336.539.1821","t":"SOUP KITCHEN","h":"Delivery (Thurs - 12p)","lat":36.06129,"lng":-79.38743},{"n":"Mustard Seed Food Pantry","a":"224 N Main St","c":"Graham","z":"27253","p":"336.226.7395","t":"PANTRY","h":"M & Tu: 10a-1p","lat":36.07475,"lng":-79.39061},{"n":"We Care / Bridging the Gap CDC","a":"2414 Swann Rd","c":"Green Level","z":"27217","p":"336.266.0580","t":"PANTRY","h":"2nd & 4th Tuesday (3p - 5p); 3rd Sa of month 9:30a-11:30a","lat":36.10336,"lng":-79.42098},{"n":"Breakthrough Community Church","a":"703 S Third Street","c":"Mebane","z":"27302","p":"919.810.2137","t":"PANTRY","h":"Tu & Sa: 9a-10:30a","lat":36.09119,"lng":-79.27846},{"n":"Melfield United Church of Christ","a":"2144 Melfield Dr","c":"Haw River","z":"27258","p":"336.578.3163","t":"PANTRY","h":"Wed & Fri: 10:30a - 11:00a ; Sa: 9a - 11:30a (2nd Saturday of each month)","lat":36.09263,"lng":-79.36463},{"n":"Mt Pisgah - Good Samaritan Food Pantry","a":"9379 NC Hwy 127","c":"Hickory","z":"28601","p":"828.455.8277","t":"PANTRY","h":"M: 3p - 5p; F: 1p - 3p","lat":35.73939,"lng":-81.33847},{"n":"Hiddenite Community Helpers","a":"45 Fire Dept CT.","c":"Hiddenite","z":"28636","p":"828.320.5269","t":"PANTRY","h":"Tu & Th: 4p - 6p","lat":35.82392,"lng":-81.10162},{"n":"Stony Point Christian Ministries","a":"411 Ruritan Park Rd","c":"Stony Point","z":"28678","p":"336.354.2591","t":"PANTRY","h":"M:10a-1p","lat":35.86186,"lng":-81.06468},{"n":"Christian Crisis Center","a":"215 5th Ave SW","c":"Taylorsville","z":"28681","p":"828.632.0022","t":"PANTRY","h":"M - F: 9a - 1p","lat":35.92847,"lng":-81.17962},{"n":"Solid Rock Food Closet","a":"71 Womble St","c":"Sparta","z":"28675","p":"336.372.6560","t":"PANTRY","h":"Last day Mon 12/15 10a - 2pm","lat":36.50111,"lng":-81.13328},{"n":"Ashe Outreach Ministries","a":"11719 Highway 88 West","c":"Creston","z":"28615","p":"336.385.1314","t":"PANTRY","h":"Tu - Th: 9a - 2p","lat":36.36079,"lng":-81.64424},{"n":"Ashe Outreach Ministries-Riverview","a":"11719 Highway 88 West","c":"Creston","z":"28615","p":"336.385.1314","t":"SOUP KITCHEN","h":"Tu - Th: 9a - 2p","lat":36.37303,"lng":-81.64213},{"n":"Ashe Food Pantry","a":"115 Colvard St","c":"Jefferson","z":"28640","p":"336.846.7019","t":"PANTRY","h":"M: 10:30a-12p","lat":36.41775,"lng":-81.47315},{"n":"Jefferson United Methodist Church","a":"115 E Main St","c":"Jefferson","z":"28640","p":"336.846.9512","t":"PANTRY","h":"Tu: 9a - 11a","lat":36.41529,"lng":-81.46831},{"n":"Warrensville Baptist Church","a":"130 Church St","c":"Warrensville","z":"28693","p":"336.384.3044","t":"PANTRY","h":"Sa: 9:30a-11:30a (2nd Saturday of each month)","lat":36.38666,"lng":-81.55524},{"n":"Ashe Really Cares","a":"204 Beaver Creek School Road","c":"West Jefferson","z":"28694","p":"336.846.5631","t":"PANTRY","h":"M - F: 9a - 3p","lat":36.39586,"lng":-81.486},{"n":"Ashe Harvest Ministries","a":"7376 NC 16 S","c":"Glendale Springs","z":"28694","p":"336.877.6322","t":"PANTRY","h":"W & Th: 11:30a-2:30p F: 2:30p-6p","lat":36.40523,"lng":-81.49372},{"n":"Covenant Fellowship Ministries","a":"6062 Petra Mill Rd","c":"Granite Falls","z":"28630","p":"828.312.4745","t":"PANTRY","h":"Tu: 5p-6:30p (1st and 3rd Tuesday of each month)","lat":35.79647,"lng":-81.44632},{"n":"South Caldwell Christian Ministry","a":"5 Quarry Rd","c":"Granite Falls","z":"28630","p":"828.396.4000","t":"PANTRY","h":"Tu & Th: 9a - 5p; W: 9a - 2p","lat":35.79705,"lng":-81.44942},{"n":"The Salvation Army - Lenoir","a":"4370 Hickory Blvd","c":"Granite Falls","z":"28630","p":"828.322.8061","t":"PANTRY","h":"M - F: 9a - 3:30p","lat":35.79889,"lng":-81.4403},{"n":"Dulatown Outreach - Kwanzaa Family Inn","a":"1631 Old North Rd","c":"Lenoir","z":"28645","p":"828.758.2482","t":"SHELTER","h":"Please call for availability","lat":35.90772,"lng":-81.5428},{"n":"First Baptist Church Whitnel","a":"1201 Connelly Springs Rd SW","c":"Lenoir","z":"28645","p":"828.493.1417","t":"PANTRY","h":"3rd Thursday 9a-11a","lat":35.9197,"lng":-81.54562},{"n":"Lenoir Soup Kitchen","a":"1113 College Avenue SW","c":"Lenoir","z":"28645","p":"828.758.1411","t":"SOUP KITCHEN","h":"M - F: 11a - 12p (Lunch); Su: 4p - 4:45p (Dinner)","lat":35.91365,"lng":-81.54084},{"n":"Mountain View Baptist Food Pantry","a":"2820 Lum Davis Lane","c":"Lenoir","z":"28645","p":"828.320.9345","t":"PANTRY","h":"Sa: 9a - 12p (3rd Saturday of each month)","lat":35.91106,"lng":-81.54577},{"n":"Bags of Blessings","a":"1808 Union Grove Rd.","c":"Lenoir","z":"28645","p":"828.728.2221","t":"PANTRY","h":"Tu: 5p - 7p (2nd and 4th Tuesday of each month)","lat":35.90685,"lng":-81.54657},{"n":"Pay It Forward Food Pantry","a":"2058 Harper Avenue NW","c":"Lenoir","z":"28645","p":"828.572.4441","t":"PANTRY","h":"Th: 9a - 12p (2nd and 4th Thursday of each month); Sa: 9a - 12p (1st Saturday of each month)","lat":35.91955,"lng":-81.53938},{"n":"Shelter Home of Caldwell County","a":"515 Scroggs St NW","c":"Lenoir","z":"28645","p":"828.758.0888","t":"SHELTER","h":"Please call for availability","lat":35.91561,"lng":-81.54184},{"n":"Shady Grove United Methodist Church","a":"1705 Shady Grove Rd","c":"Providence","z":"27315","p":"336.388.2750","t":"PANTRY","h":"M: 4p-6p (2nd Monday of each month)","lat":36.42715,"lng":-79.38652},{"n":"Locust Hill UMC","a":"281 Stoney Creek School Road","c":"Reidsville","z":"27320","p":"336.388.2489","t":"PANTRY","h":"Th: 6p - 7p (3rd Thursday of each month)","lat":36.34542,"lng":-79.67283},{"n":"Caswell County Parish, Inc","a":"1038 Main Street","c":"Yanceyville","z":"27379","p":"336.694.6428","t":"PANTRY","h":"Tu & Th: 9:30a - 4:45p","lat":36.39987,"lng":-79.33875},{"n":"County Outreach Ministry","a":"225 Third Street","c":"Yanceyville","z":"27379","p":"336-694-4224","t":"PANTRY","h":"Th: 11a - 1p; Th: 2p - 4p (2nd Thursday of each month)","lat":36.40652,"lng":-79.33505},{"n":"South Davidson Family Resource Center","a":"338 W Salisbury St","c":"Denton","z":"27239","p":"336.859.5399","t":"PANTRY","h":"M - W: 8:30a - 12p","lat":35.63947,"lng":-80.11773},{"n":"Abbotts Creek - Labor of Love","a":"2817 Abbotts Creek Church Rd","c":"High Point","z":"27265","p":"336.869.8410","t":"PANTRY","h":"M: 6:30p - 7:30p (1st and 3rd Monday of each month)","lat":35.99197,"lng":-80.06004},{"n":"Davidson Community Action","a":"911 S Talbert Blvd","c":"Lexington","z":"27292","p":"336.249.0234","t":"PANTRY","h":"Th:9a - 12p; Th: 2p - 4p","lat":35.82715,"lng":-80.2515},{"n":"First Assembly of God","a":"382 Walser Road","c":"Lexington","z":"27295","p":"336 247-1864","t":"PANTRY","h":"Sa.: 9:30a - 11:30a (3rd Saturday of each month)","lat":35.85697,"lng":-80.31236},{"n":"Grace Episcopal Church","a":"419 S. Main St.","c":"Lexington","z":"27292","p":"336.596.0067","t":"SOUP KITCHEN","h":"Sun. 12:30 p - 1:30p","lat":35.81933,"lng":-80.254},{"n":"Greater Things Outreach","a":"6282 Old US Hwy 52","c":"Lexington-(Welcome,NC)","z":"27374","p":"336.619.0171","t":"PANTRY","h":"Tu : 4:30p - 6:00p; Th: 5:30p - 7:00p","lat":35.92069,"lng":-80.27024},{"n":"Least of These Ministries","a":"4600 W Old Highway 64","c":"Lexington","z":"27295","p":"336.425.1166","t":"PANTRY","h":"M: 12p-2p; Tu: 3:30p-5:30p","lat":35.86465,"lng":-80.31471},{"n":"Loaves and Fishes Food Ministry","a":"902 South Main St.","c":"Lexington","z":"27292","p":"336.247.1692","t":"PANTRY","h":"Sa: 9:30a - 12p","lat":35.83094,"lng":-80.24866},{"n":"North Lexington Baptist Church","a":"201 Mize Rd","c":"Lexington","z":"27295","p":"336.248.6285","t":"PANTRY","h":"Tu: 3p - 5:30p; F: 9-10a","lat":35.86117,"lng":-80.32238},{"n":"Pastors Pantry","a":"307 N State St","c":"Lexington","z":"27292","p":"336.249.8824","t":"PANTRY","h":"M - Th: 11a - 3p","lat":35.82395,"lng":-80.25311},{"n":"The Salvation Army-Davidson","a":"314 W 9th Ave","c":"Lexington","z":"27292","p":"336.481.7324 ext.2","t":"PANTRY","h":"M - F: 8a - 12p","lat":35.82058,"lng":-80.25713},{"n":"The Salvation Army-Davidson","a":"314 W 9th Ave","c":"Lexington","z":"27292","p":"336.481.7324 ext.2","t":"SOUP KITCHEN","h":"Tu & Th: 8:30a - 9:30a (Breakfast); M - F: 11:30a - 12:30p (Lunch)","lat":35.82058,"lng":-80.25713},{"n":"Upper Room Food Ministry, Inc.","a":"11185 NC Highway 8","c":"Lexington","z":"27292","p":"954.324.9204","t":"PANTRY","h":"M & W: 8:30a - 12p","lat":35.82155,"lng":-80.2486},{"n":"Fairgrove Family Resource","a":"159 Myrtle Drive","c":"Thomasville","z":"27360","p":"336.472.7217","t":"PANTRY","h":"M - Th: 9a - 1p","lat":35.88694,"lng":-80.07381},{"n":"First Pentecostal-Servant's Table","a":"509 Cloniger Road","c":"Thomasville","z":"27360","p":"336.425.3062","t":"PANTRY","h":"Sa: 9a - 11a (3rd Saturday of each month)","lat":35.88477,"lng":-80.08159},{"n":"He Cares, Inc.","a":"12 W Guildford St.","c":"Thomasville","z":"27360","p":"336 944-8761","t":"SOUP KITCHEN","h":"Sa: 8:00a - 9:00a (Breakfast)","lat":35.88321,"lng":-80.07786},{"n":"House of Provisions","a":"123 National Highway","c":"Thomasville","z":"27360","p":"336.870.9711","t":"PANTRY","h":"M: 10a - 12p","lat":35.88055,"lng":-80.08854},{"n":"The Father's Storehouse","a":"609 National Hwy","c":"Thomasville","z":"27360","p":"336 870-8179","t":"PANTRY","h":"M: 10a-12p","lat":35.88683,"lng":-80.07404},{"n":"The Father's Storehouse","a":"609 National Hwy","c":"Thomasville","z":"27360","p":"336 870-8179","t":"SOUP KITCHEN","h":"M: 8:30-11a (Breakfast/Lunch)","lat":35.88683,"lng":-80.07404},{"n":"Cooperative Community Ministry","a":"10 W Guilford St","c":"Thomasville","z":"27360","p":"336.476.1842","t":"PANTRY","h":"M, Tu, Th & F: 10a - 1p","lat":35.88435,"lng":-80.08901},{"n":"J. Smith Young YMCA","a":"119 W. 3rd Ave","c":"Lexington","z":"27292","p":"336.249.2177","t":"PANTRY","h":"M-F 6a - 12p & 4p - 7:30p; Sat: 8a - 1:30p; Sun: 1p - 3:30p","lat":35.82791,"lng":-80.25637},{"n":"Canaan UMC","a":"1760 shady grove church rd","c":"Winston-Salem","z":"27107","p":"336.769.2782","t":"PANTRY","h":"5:00pm - 6:30pm Last Thursday of each month","lat":36.03594,"lng":-80.20679},{"n":"Army of Hope","a":"2121 Cornatzer Rd","c":"Advance","z":"27006","p":"336.648.0404","t":"PANTRY","h":"Sa: 12 - 3p (1st & 3rd Saturday of each month)","lat":35.93828,"lng":-80.40254},{"n":"Ascension Food Pantry","a":"183 Fork-Bixby Rd","c":"Advance","z":"27006","p":"336.998.0857","t":"PANTRY","h":"Tue: 3:00p - 5:00p","lat":35.93292,"lng":-80.40618},{"n":"First Baptist Church - Cooleemee","a":"204 Marginal Street","c":"Cooleemee","z":"27014","p":"336.284.2626","t":"PANTRY","h":"Sa: 10a - 11:30a (2nd & 4th Saturday of each month)","lat":35.81287,"lng":-80.55484},{"n":"A Storehouse for Jesus","a":"675 E Lexington Rd","c":"Mocksville","z":"27028","p":"336.753.8081","t":"PANTRY","h":"M, W & Th: 8:30a - 11a; Tu: 12:30p - 3p","lat":35.87756,"lng":-80.54175},{"n":"Clemmons Food Pantry","a":"2660 Neudorf Road","c":"Clemmons","z":"27012","p":"336.331.3432","t":"PANTRY","h":"Tu: 4p - 6p; Th: 3:30p -7p; Sa: 9a - 11a","lat":36.01602,"lng":-80.38231},{"n":"St James UMC Community Food Pantry","a":"165 Bethania Rural Hall Rd","c":"Rural Hall","z":"27045","p":"336.901.1171","t":"PANTRY","h":"wkly Th: 11a-4p","lat":36.23245,"lng":-80.22188},{"n":"Morris Chapel UMC","a":"2715 Darrow Road","c":"Walkertown","z":"27051","p":"336.595.8101","t":"PANTRY","h":"Tu & Th: 10a - 11a","lat":36.16887,"lng":-80.15231},{"n":"Centenary United Methodist Church","a":"633 W Fourth 1/2 St.","c":"Winston-Salem","z":"27101","p":"336.724.6311","t":"PANTRY","h":"Tu: 10a - 11:30a","lat":36.10446,"lng":-80.25425},{"n":"Crisis Control Ministry","a":"200 E 10th St","c":"Winston-Salem","z":"27101","p":"336.724.7875","t":"PANTRY","h":"M-F 9:00-12:00, 1:00-4:00","lat":36.09629,"lng":-80.25186},{"n":"Ephesus Seventh Day Adventist","a":"1225 N Cleveland Ave","c":"Winston-Salem","z":"27101","p":"336.724.0491","t":"PANTRY","h":"T & W Registration at 8a-11a Pick Up 2pm-5pm","lat":36.10522,"lng":-80.25331},{"n":"H.O.P.E. of Winston-Salem","a":"355 Crawford Pl","c":"Winston-Salem","z":"27101","p":"336.816.0801","t":"SOUP KITCHEN","h":"Sunday mobile distribution sites; call agency for listing","lat":36.10564,"lng":-80.2609},{"n":"MBL - One Love Strong Foundation","a":"717 S. Marshall St.","c":"Winston-Salem","z":"27101","p":"336.986.9008","t":"PANTRY","h":"Tuesday mobile distribtution sites; call for listing","lat":36.10272,"lng":-80.26028},{"n":"New Jerusalem Baptist Church","a":"1227 N Dunleith Ave","c":"Winston-Salem","z":"27101","p":"336.723.9743","t":"PANTRY","h":"M: 11a - 2p","lat":36.10261,"lng":-80.25265},{"n":"One Love Strong Foundation Pantry","a":"717 S. Marshall St.","c":"Winston-Salem","z":"27101","p":"336-407-1592","t":"PANTRY","h":"W: 3pm-5pm","lat":36.09329,"lng":-80.24976},{"n":"Samaritan Ministries","a":"414 E Northwest Blvd.","c":"Winston-Salem","z":"27101","p":"336.748.1962","t":"SOUP KITCHEN","h":"M- Su: Lunch @ 10:30a - 1p","lat":36.10631,"lng":-80.25439},{"n":"The Dwelling","a":"502 N Broad St","c":"Winston-Salem","z":"27101","p":"336.207.0931","t":"SOUP KITCHEN","h":"Sunday: Noon","lat":36.10349,"lng":-80.25186},{"n":"The Salvation Army - Trade St - Winston Salem","a":"1255 N Trade St","c":"Winston-Salem","z":"27101","p":"336.723.9155","t":"SOUP KITCHEN","h":"M - Su: Breakfast @ 7-7:45a, Dinner (Sun. Only) 5:30-6:00  p","lat":36.09515,"lng":-80.25365},{"n":"The Shalom Project","a":"639 Green St","c":"Winston-Salem","z":"27101","p":"336.721.0606","t":"PANTRY","h":"Pantry: Tu: 9a - 12:00p","lat":36.10104,"lng":-80.25501},{"n":"Winston-Salem Rescue Mission","a":"710 Trade St.","c":"Winston-Salem","z":"27101","p":"336.723.1848","t":"PANTRY","h":"T: 9:00-11:00; F 1:00-2:30","lat":36.10785,"lng":-80.25359},{"n":"Winston-Salem Rescue Mission","a":"717 Oak St","c":"Winston-Salem","z":"27101","p":"336.723.1848","t":"SHELTER","h":"Please call for availability","lat":36.10177,"lng":-80.25076},{"n":"Eastside Church of Christ","a":"536 Barbare Jane Ave.","c":"Winston-Salem","z":"27101","p":"336.722.2088","t":"PANTRY","h":"last Sa: 11a-2p","lat":36.09654,"lng":-80.25085},{"n":"Ardmore United Methodist Church","a":"630 S Hawthorne Rd","c":"Winston-Salem","z":"27103","p":"336.723.3695","t":"PANTRY","h":"1st & 3rd Th: 5:30p - 7:00p","lat":36.06242,"lng":-80.31426},{"n":"Star of Bethlehem Lutheran Church","a":"1355 Jonestown Rd","c":"Winston-Salem","z":"27103","p":"336.682.6802","t":"PANTRY","h":"Sunday: 9:00-12:00","lat":36.06882,"lng":-80.30998},{"n":"Catholic Charities","a":"1612 14th st","c":"Winston-Salem","z":"27105","p":"336.727.0705","t":"PANTRY","h":"Th 9:00-11:00 Call ahead for appointment","lat":36.13048,"lng":-80.22073},{"n":"Christ Rescue Temple","a":"1500 N. Dunleith Ave.","c":"Winston-Salem","z":"27105","p":"336.722.9841","t":"PANTRY","h":"3rd Thursday of each month: 12p - 1p","lat":36.13248,"lng":-80.22766},{"n":"Christ Rescue Temple","a":"1500 N. Dunleith Ave.","c":"Winston-Salem","z":"27105","p":"336.722.9841","t":"SOUP KITCHEN","h":"Th: 12p- 1p","lat":36.13248,"lng":-80.22766},{"n":"Friendship Resource Center","a":"1317 N Cherry St.","c":"Winston-Salem","z":"27105","p":"336.671.1259","t":"PANTRY","h":"Th: 10a-2p","lat":36.1312,"lng":-80.23313},{"n":"H.O.P.E. of Winston-Salem","a":"355 N Crawford Pl","c":"Winston-Salem","z":"27105","p":"336.750.7964","t":"PANTRY","h":"mobile distribution sites; call agency for listing","lat":36.12815,"lng":-80.23063},{"n":"Love Community Development","a":"3980 N Liberty St","c":"Winston-Salem","z":"27105","p":"336.306.8119","t":"PANTRY","h":"M, F: 12 p - 3p","lat":36.13016,"lng":-80.2199},{"n":"Neighborhood Hands Inc","a":"1713 N Liberty Street","c":"Winston-Salem","z":"27105","p":"336.391.0218","t":"PANTRY","h":"W: 10am-2pm","lat":36.13412,"lng":-80.22766},{"n":"Senior Services - Meals on Wheels","a":"2895 Shorefair Dr","c":"Winston-Salem","z":"27105","p":"336.725.0907","t":"PANTRY","h":"1st Monday of each month: 8a - 9a","lat":36.13994,"lng":-80.22247},{"n":"St Paul United Methodist Church","a":"2400 Dellabrook","c":"Winston-Salem","z":"27105","p":"336.723.4531","t":"PANTRY","h":"W: 1:30p - 3p","lat":36.12988,"lng":-80.23446},{"n":"St Stephen Missionary Baptist","a":"5000 Noble St","c":"Winston-Salem","z":"27105","p":"336.744.7303","t":"PANTRY","h":"2nd & 4th Th of each month: 12p - 3p","lat":36.14006,"lng":-80.22083},{"n":"St. John CME Church","a":"350 NW Crawford Place","c":"Winston-Salem","z":"27105","p":"336-725-3968","t":"PANTRY","h":"4th Tuesday of each month: 11:00 - 3:00; 2nd & 3rd Th of each month: 1p - 3p","lat":36.13934,"lng":-80.226},{"n":"The Ultimate Sacrifice","a":"2285 Premier Park Ln","c":"Winston-Salem","z":"27105","p":"336.448.0147","t":"PANTRY","h":"M & F: 1p-3p","lat":36.12984,"lng":-80.23029},{"n":"Una Bendicion","a":"3701 Crossland Rd","c":"Winston-Salem","z":"27106","p":"336.777.6403","t":"PANTRY","h":"Every other Saturday 10:00-12:00","lat":36.13801,"lng":-80.34047},{"n":"Union Baptist Church","a":"406 Northwest Blvd","c":"Winston-Salem","z":"27105","p":"336.724.9305","t":"PANTRY","h":"1st, 3rd, & 4th Th: 1p - 3p","lat":36.13342,"lng":-80.23172},{"n":"Hope Community Church","a":"4660 Brownsboro Rd","c":"Winston-Salem","z":"27106","p":"336.896.0002","t":"PANTRY","h":"S 11a-12p wkly","lat":36.14222,"lng":-80.32837},{"n":"Ivylin Kellyman Food Pantry","a":"4832 Morningside Dr.","c":"Winston-Salem","z":"27106","p":"336.757.8330","t":"PANTRY","h":"3rd Sunday 10a-12p; 4th Friday 10a-12p","lat":36.1294,"lng":-80.33978},{"n":"Maple Springs United Methodist Church","a":"2569 Reynolda Rd","c":"Winston-Salem","z":"27106","p":"336.722.7563","t":"PANTRY","h":"Tu 9a- 3p, W 9a-10:50a","lat":36.13831,"lng":-80.33446},{"n":"New Story Church","a":"1401 Trade Mart Blvd","c":"Winston-Salem","z":"27106","p":"336.408.1905","t":"PANTRY","h":"W: 5:00-6:30","lat":36.13877,"lng":-80.34134},{"n":"Piney Grove Baptist Church","a":"4740 INDIANA AVE.","c":"Winston-Salem","z":"27106","p":"336.744.8995","t":"PANTRY","h":"Tu & Th: 11a - 3p","lat":36.13602,"lng":-80.33033},{"n":"Central Triad Church","a":"2935 Cole Rd","c":"Winston-Salem","z":"27107","p":"336.784.0887","t":"PANTRY","h":"4th Saturday: 10a - 2p","lat":36.04711,"lng":-80.2094},{"n":"Iglesia Wesleyana el Buen Samaritano","a":"2800 Ludwig St","c":"Winston-Salem","z":"27107","p":"336-785-0860","t":"PANTRY","h":"Wednesday: 1:00-3:00","lat":36.0474,"lng":-80.20985},{"n":"City Lights Ministry","a":"1600 Williamson St","c":"Winston-Salem","z":"27107","p":"336.831.1003","t":"PANTRY","h":"Office Hours 10-3","lat":36.05083,"lng":-80.20871},{"n":"MBL - City Lights Ministry","a":"1600 Williamson St","c":"Winston-Salem","z":"27107","p":"336.831.1003","t":"PANTRY","h":"mobile distribution sites; call agency for listing","lat":36.0487,"lng":-80.20183},{"n":"Ministerio Fil 4 13","a":"1526 Bruce St","c":"Winston-Salem","z":"27107","p":"336.486.2309","t":"PANTRY","h":"T starts at 10:00","lat":36.04442,"lng":-80.20016},{"n":"Ministry of Fullness","a":"735 E Devonshire St.","c":"Winston-Salem","z":"27107","p":"336.608.0631","t":"PANTRY","h":"Every Saturday. 1p-3p","lat":36.04063,"lng":-80.20933},{"n":"Our Fathers House Ministries","a":"20 Rink Rd","c":"Winston-Salem","z":"27107","p":"336.345.2155","t":"PANTRY","h":"2nd&4th Friday 11a - 1p","lat":36.03903,"lng":-80.20627},{"n":"St Peter's World Outreach","a":"3683 Old Lexington Rd","c":"Winston-Salem","z":"27107","p":"336-784-3069","t":"PANTRY","h":"Tu & Th: 9a - 12p; 1st and 3rd Saturday of each month: 9a - 12p","lat":36.04233,"lng":-80.20705},{"n":"Whole Man Ministries","a":"3916 Old Lexington Rd","c":"Winston-Salem","z":"27107","p":"336.785.2080","t":"PANTRY","h":"Th; beginning at 8:00am. 1st & 3rd Sat 9:00-10:30","lat":36.03548,"lng":-80.20135},{"n":"Beloved Community Food Pantry","a":"3205 S. Main Street","c":"Winston-Salem","z":"27127","p":"336.893.5677","t":"PANTRY","h":"1st & 3rd Thursday of each month: 10a - 12p. 2nd Saturday of each month 10a-12p","lat":35.99616,"lng":-80.27612},{"n":"The Trinity Center","a":"5307 Peters Creek Parkway","c":"Winston-Salem","z":"27127","p":"336.784-9347","t":"PANTRY","h":"1st & 3rd Saturday of each month: 9:30a - 11:00a","lat":35.99852,"lng":-80.28444},{"n":"Iglesia Nueva Vida","a":"4423 S Main St","c":"Winston-Salem","z":"27127","p":"336.720.9204","t":"PANTRY","h":"2nd Tuesday of each month: 7:30p - 9p","lat":35.99815,"lng":-80.28883},{"n":"Sunnyside Ministry","a":"319 Haled St","c":"Winston-Salem","z":"27127","p":"336.724.7558","t":"PANTRY","h":"M - Th: 9a - 11a & 1p - 3p; F: 9a - 11a","lat":36.0044,"lng":-80.2755},{"n":"Agape Care & Share, Inc.","a":"1201 N Liberty St","c":"Winston-Salem","z":"27101","p":"336.744.4004","t":"PANTRY","h":"Tu & Th: 9a - 12p; W: 4p - 6p","lat":36.095,"lng":-80.26169},{"n":"Mt. Moriah - Bread of Life","a":"317 Jefferson St","c":"Kernersville","z":"27284","p":"336.312.6427","t":"PANTRY","h":"3rd Saturday of each month: 11a - 1p","lat":36.11406,"lng":-80.07453},{"n":"Project RE3 Hope Center","a":"3801 Old Hollow Rd","c":"Kernersville","z":"27284","p":"336.497.1330","t":"PANTRY","h":"wkly Sa 9-11a; wkly W 9-11a","lat":36.12052,"lng":-80.07421},{"n":"The Salvation Army-Kernersville","a":"130 E. Mountain St.","c":"Kernersville","z":"27284","p":"336.993-8844","t":"PANTRY","h":"M, T, Th: 11:30-12:15","lat":36.12079,"lng":-80.07064},{"n":"Locust Grove","a":"4707 NC Hwy 150","c":"Browns Summit","z":"27214","p":"336.656.3056","t":"PANTRY","h":"3rd Th: 9a - 12p; 3rd Th: 4p - 7p","lat":36.21791,"lng":-79.80561},{"n":"Cappadocia Intergrowth Enrichment","a":"600 W. Minneola Street","c":"Gibsonsville","z":"27249","p":"336.603.6374","t":"PANTRY","h":"varies - call agency","lat":36.1089,"lng":-79.5466},{"n":"Alamance Presbyterian Church","a":"4000 Presbyterian Rd","c":"Greensboro","z":"27406","p":"336.697.0488","t":"PANTRY","h":"by appointment Sa: 10:30a - 11:30a","lat":36.03771,"lng":-79.74542},{"n":"Cathedral of His Glory","a":"4501 Lake Jeanette Rd","c":"Greensboro","z":"27455","p":"336.282.0679","t":"PANTRY","h":"Sa: 10a - 12p  on varying weeks; call agency for schedule","lat":36.16656,"lng":-79.82811},{"n":"Celia Phelps Memorial UMC","a":"3709 Groometown Road","c":"Greensboro","z":"27407","p":"336.855.8348","t":"PANTRY","h":"1st & 3rd Tu: 10a - 1p; 3rd Sa: 10a - 12p","lat":36.02529,"lng":-79.83942},{"n":"Divine Intervention - Care Link","a":"1214 Grove Street","c":"Greensboro","z":"27402","p":"336.285.6887","t":"PANTRY","h":"W (By Appointment only - call prior to W to make an appointment)","lat":36.07949,"lng":-79.79254},{"n":"Divine Intervention - Care Link","a":"1214 Grove Street","c":"Greensboro","z":"27402","p":"336.285.6887","t":"SOUP KITCHEN","h":"M - F: times and dates vary - call agency","lat":36.07949,"lng":-79.79254},{"n":"Elim Christian Fellowship","a":"3222 Summit Ave.","c":"Greensboro","z":"27405","p":"336.375.0222","t":"PANTRY","h":"1st & 3rd Th: 10a-2p","lat":36.10735,"lng":-79.75153},{"n":"Free Indeed Food Pantry","a":"2400 S Holden Rd","c":"Greensboro","z":"27407","p":"336.370.6707","t":"PANTRY","h":"3rd Sat of month: 11a-1p","lat":36.03838,"lng":-79.8312},{"n":"Free Indeed Outreach Ministry","a":"4615-A Hill Top Road","c":"Greensboro","z":"27405","p":"336.370.6707","t":"SOUP KITCHEN","h":"4th Sa: 11a - 2p","lat":36.10698,"lng":-79.75974},{"n":"Gate City Vineyard Christian Fellowship / Gate City Grocery GiveAway","a":"204 S Westgate Dr","c":"Greensboro","z":"27407","p":"336.323.1288","t":"PANTRY","h":"weekly on W 9a-10:30a","lat":36.02418,"lng":-79.83245},{"n":"Genesis Baptist Church Food Pantry","a":"2812 E. Bessemer Ave","c":"Greensboro","z":"27405","p":"336.379.1133","t":"PANTRY","h":"2nd & 4th Th: 1p - 2:30p","lat":36.11223,"lng":-79.74837},{"n":"Grace Life Church","a":"2317 Stanley Rd","c":"Greensboro","z":"27407","p":"336.203.4823","t":"PANTRY","h":"1st & 3rd F: 9a-12p; 2nd&4th Sa: 9a-12p","lat":36.03116,"lng":-79.83241},{"n":"Greensboro Urban Ministry","a":"305 West Gate City Blvd","c":"Greensboro","z":"27406","p":"336.271.5959","t":"PANTRY","h":"T-TH 9am-2pm","lat":36.03729,"lng":-79.75052},{"n":"Jewish Family Services","a":"5509-C W Friendly Ave","c":"Greensboro","z":"27410","p":"336.852.4829","t":"PANTRY","h":"Thursdays 10am-12:30pm","lat":36.1034,"lng":-79.8831},{"n":"Lebanon Baptist Church Pantry","a":"4635 Hicone Rd","c":"Greensboro","z":"27405","p":"336.621.0597","t":"PANTRY","h":"4th Sa: 9a - 11a","lat":36.10097,"lng":-79.76355},{"n":"Lutheran Church of Our Father","a":"3304 Groometown Rd","c":"Greensboro","z":"27407","p":"336.299.0235","t":"PANTRY","h":"2nd M 5:30p - 7:30p; each W 9:30a - 11:30a","lat":36.02958,"lng":-79.84526},{"n":"Manna House of Coliseum Blvd","a":"1906 Bailiff St","c":"Greensboro","z":"27403","p":"336.446.9341","t":"PANTRY","h":"Tues 11a-1p call for appointment preferred","lat":36.08294,"lng":-79.81311},{"n":"MBL-Out of the Garden","a":"300 NC Hwy 68S","c":"Greensboro","z":"27405","p":"336.821.2450","t":"PANTRY","h":"mobile distribution sites; call agency for listing","lat":36.10379,"lng":-79.76361},{"n":"Mount Zion Baptist Church","a":"1301 Alamance Church Rd.","c":"Greensboro","z":"27406","p":"336.373.4264","t":"PANTRY","h":"W: 9a-11a","lat":36.03261,"lng":-79.75893},{"n":"New Zion Missionary Baptist Church","a":"408 Martin Luther King Jr. Dr.","c":"Greensboro","z":"27406","p":"336.272.8441","t":"PANTRY","h":"T: 12:p -2p","lat":36.02325,"lng":-79.75685},{"n":"Simple Ways","a":"1900 W Market Street","c":"Greensboro","z":"27401","p":"336.708.9599","t":"PANTRY","h":"M: 9:30a - 2:30p; Tu: 9:30a - 2:30p; W: 9:30a - 2:30p; Th: 9:30a - 2:30p","lat":36.06807,"lng":-79.79951},{"n":"Simple Ways","a":"1806 Merritt Dr","c":"Greensboro","z":"27407","p":"336.708.9599","t":"PANTRY","h":"F: 11a - 2p","lat":36.02504,"lng":-79.83509},{"n":"Out of the Garden Project","a":"300 NC Hwy 68S","c":"Greensboro","z":"27409","p":"336.821.2450","t":"PANTRY","h":"mobile distribution sites; call agency for listing","lat":36.0932,"lng":-79.92489},{"n":"Recovery Caf\u00e9 - Greensboro","a":"1810 Phillips Ave.","c":"Greensboro","z":"27405","p":"336.247.5467","t":"SOUP KITCHEN","h":"M & Th: 6p-9p","lat":36.11157,"lng":-79.76342},{"n":"Safer Cities","a":"2523 E Phillips Ave","c":"Greensboro","z":"27405","p":"336.912.3742,","t":"PANTRY","h":"3rd Thursday 2:30-3:30","lat":36.107,"lng":-79.75349},{"n":"St Paul Baptist Church","a":"1309 Larkin St","c":"Greensboro","z":"27406","p":"336.275.4680","t":"PANTRY","h":"Tu: 9a - 11a; Th: 9a - 11a","lat":36.0335,"lng":-79.75568},{"n":"The Redeemed Christian Church","a":"1808 Mack Street","c":"Greensboro","z":"27406","p":"336.297.4055","t":"PANTRY","h":"1st & 3rd Sa: 9a - 12p","lat":36.03597,"lng":-79.74943},{"n":"The Salvation Army - Center of Hope","a":"1311 S Eugene St","c":"Greensboro","z":"27406","p":"336.273.5572","t":"PANTRY","h":"Tu: 9a - 12p; Th 9a - 12p","lat":36.03663,"lng":-79.74625},{"n":"True Salvation Outreach Ministry","a":"1901 Spencer St","c":"Greensboro","z":"27401","p":"336.988.0123","t":"PANTRY","h":"4th Saturday: 10a - 12p","lat":36.07435,"lng":-79.79744},{"n":"Vandalia Presbyterian Church","a":"101 W Vandalia Road","c":"Greensboro","z":"27406","p":"336.275.3705","t":"PANTRY","h":"W: 9a - 12p","lat":36.03726,"lng":-79.75247},{"n":"W.D. Mohammed Islamic Center","a":"3015 E. Bessemer Ave.","c":"Greensboro","z":"27406","p":"336.285.5992","t":"PANTRY","h":"M - F: 11a-3p","lat":36.02637,"lng":-79.75659},{"n":"We Are One Christian Fellowship","a":"1951 Brightwood School","c":"Greensboro","z":"27405","p":"336.358.2131","t":"PANTRY","h":"Fridays 11am-2pm","lat":36.10452,"lng":-79.7547},{"n":"Wells Memorial - We Care Pantry","a":"1001 E Washington Street","c":"Greensboro","z":"27401","p":"336.895.4776","t":"PANTRY","h":"3rd Tu: 5p - 7p; 3rd Sa: 9a - 1p","lat":36.07036,"lng":-79.78873},{"n":"New Covenant Christian Food Pantry","a":"1305 Ball St.","c":"Greensboro","z":"27405","p":"336.230.0221","t":"PANTRY","h":"3rd Sa: 9a-12p","lat":36.10588,"lng":-79.75925},{"n":"5 Loaves 2 Fish Food Pantry","a":"2066 Deep River Rd","c":"High Point","z":"27265","p":"336.454.5292","t":"PANTRY","h":"Sa: 1p - 4p","lat":35.99305,"lng":-80.06066},{"n":"A Gift of Giving","a":"2600 Assembly Rd.","c":"Greensboro","z":"27260","p":"743-264-8051","t":"PANTRY","h":"3rd Sat 10-12","lat":35.96252,"lng":-79.99919},{"n":"A Shared Blessing Food Pantry - First UMC - HPT","a":"335 N Wrenn St.","c":"High Point","z":"27260","p":"336.889.4429","t":"PANTRY","h":"Th: 10a-11a","lat":35.95632,"lng":-80.00701},{"n":"Emerywood Baptist Church","a":"1300 Country Club Dr","c":"High Point","z":"27262","p":"336.885.6016","t":"PANTRY","h":"1st & 3rd Saturday of each month: 9a - 12p (Please call Monday before to schedule appointment)","lat":35.98922,"lng":-80.03371},{"n":"Grace Point Pantry","a":"5934 Surrett Dr.","c":"High Point","z":"27263","p":"336.989.8000","t":"PANTRY","h":"2nd & 4th Sat of month 10a-2p","lat":35.9313,"lng":-79.95931},{"n":"Helping Hands","a":"2301 S Main St","c":"High Point","z":"27263","p":"336.886.7696","t":"PANTRY","h":"Tu - Th: 9a -11a and 1p - 4p","lat":35.92802,"lng":-79.97118},{"n":"Julian United Methodist Church","a":"2105 NC Hwy 62 E","c":"Julian","z":"27283","p":"336.685.0103","t":"PANTRY","h":"3rd Sa: 9a - 10a","lat":35.93307,"lng":-79.65286},{"n":"MANNA Box Ministry","a":"4400 Alamance Church Rd","c":"Liberty","z":"27298","p":"336.565.4812","t":"PANTRY","h":"Offers delivery - call in advance","lat":35.85095,"lng":-79.57226},{"n":"MBL-The Salv Army-HP","a":"301 W Green Dr","c":"High Point","z":"27260","p":"336.881.5400","t":"PANTRY","h":"Please call for locations","lat":35.96003,"lng":-80.00098},{"n":"New Beginnings Full Gospel Ministries","a":"215 Fourth St","c":"High Point","z":"27260","p":"336.884.8183","t":"PANTRY","h":"by appointment M - F 10a - 4p","lat":35.96172,"lng":-80.00168},{"n":"One Step Further","a":"1309 Leonard St","c":"High Point","z":"27401","p":"336.708.9599","t":"PANTRY","h":"2nd & 3rd F: 11a - 3p","lat":36.06994,"lng":-79.78569},{"n":"Open Door Ministries - Father's Table","a":"400 N Centennial St","c":"High Point","z":"27260","p":"336.885.0191","t":"SOUP KITCHEN","h":"Breakfast: M - Su 8a - 9a; Lunch: M - Sa 11a - 12p; Dinner: M - Su 6p - 7p","lat":35.96032,"lng":-79.99728},{"n":"Open Door Ministries - Pantry","a":"400 N Centennial St","c":"High Point","z":"27260","p":"336.885.0191","t":"PANTRY","h":"M - F: 11a - 2p","lat":35.9496,"lng":-80.00483},{"n":"Piedmont Health Services & Sickle Cell Agency","a":"401 Taylor Ave","c":"High Point","z":"27260","p":"336.274.1507","t":"PANTRY","h":"Tu: 11a - 3p; Th: 11a - 3p","lat":35.95468,"lng":-79.99844},{"n":"Solid Rock Baptist Church","a":"903 E Kearns Ave","c":"High Point","z":"27260","p":"336.889.2486","t":"PANTRY","h":"Please call","lat":35.9646,"lng":-79.99966},{"n":"The Salvation Army","a":"301 W Green Dr","c":"High Point","z":"27260","p":"336.881.5400","t":"PANTRY","h":"M: 8a - 11:30a + 1p - 2:30p; W: 8a - 11:30a + 1p - 2:30p; F: 8a - 11:30a + 1p - 2:30p","lat":35.95588,"lng":-80.00212},{"n":"Triad Adult Day Care","a":"409 E Fairfield Rd","c":"High Point","z":"27263","p":"336.431.1537","t":"PANTRY","h":"M - F: 12p - 4p","lat":35.92058,"lng":-79.9614},{"n":"Triad Food Pantry","a":"1311 Johnson St","c":"High Point","z":"27262","p":"336.991.5329","t":"PANTRY","h":"3rd Wed 3p-4p; Seniors & Disabled 3rd Tuesday 11a-12:30p","lat":35.99433,"lng":-80.03161},{"n":"Ward Street Community Resource Center","a":"1619 W Ward Avenue","c":"High Point","z":"27260","p":"336.888.6091","t":"PANTRY","h":"W:10:30a-11:30a","lat":35.96018,"lng":-80.0027},{"n":"Lydia House","a":"830 West Green Dr. Suite 101","c":"High Point","z":"27260","p":"336.471.0183","t":"SOUP KITCHEN","h":"1st & 2nd Sa: 11a-2p","lat":35.95156,"lng":-80.00154},{"n":"West End Ministries - Pantry","a":"903 English Rd.","c":"High Point","z":"27261","p":"336.884.1105","t":"PANTRY / SOUP KITCHEN","h":"Pantry: W: 3p - 5p; Soup Kitchen: Th: 5p - 6:30p","lat":35.98757,"lng":-79.98696},{"n":"Matthew 25 Ministries","a":"3223 Harmony Hwy","c":"Harmony","z":"28634","p":"704.546.5859","t":"PANTRY","h":"W, F & Sa: 9a - 11:30a","lat":35.79385,"lng":-80.72677},{"n":"Cornerstone Church","a":"650 Glover St","c":"Statesville","z":"28625","p":"704.873.0032","t":"PANTRY","h":"M-F: Appt. Only","lat":35.77566,"lng":-80.87913},{"n":"Diakonos- Fifth Street Shelter","a":"1421 Fifth St","c":"Statesville","z":"28677","p":"704.872.4045","t":"SOUP KITCHEN","h":"M - Su: 8a - 9a (Breakfast);M - Su: 12p - 1p (Lunch); M - Su: 5:30p - 6p (Dinner)","lat":35.76873,"lng":-80.8927},{"n":"First Church of Nazarene","a":"506 Medlin St","c":"Statesville","z":"28677","p":"704.878.2235","t":"PANTRY","h":"Tu & F: 11a - 12:30p","lat":35.78116,"lng":-80.88852},{"n":"Iredell Christian Ministries","a":"752 Old Salisbury Road","c":"Statesville","z":"28677","p":"704.924.6700","t":"PANTRY","h":"M - W: 9:30a - 11:30a; Th: 1p - 3:00p","lat":35.77326,"lng":-80.88499},{"n":"Landmark Relief","a":"2200 E Broad St","c":"Statesville","z":"28625","p":"704.873.9701","t":"PANTRY","h":"Tu: 10:30a - 12:30p (1st and 3rd Tuesday of each month)","lat":35.77484,"lng":-80.87345},{"n":"Ministerio de Compasion","a":"214 Shumaker Dr","c":"Statesville","z":"28625","p":"704.437.0553","t":"PANTRY","h":"W: 4:45-6:45p","lat":35.77493,"lng":-80.87921},{"n":"The Salvation Army - Statesville","a":"1361 Caldwell St","c":"Statesville","z":"28677","p":"704.872.5623","t":"PANTRY","h":"Tue: 9a - 3:30p","lat":35.77234,"lng":-80.88843},{"n":"Yokefellow Ministry of Statesville","a":"1380 Shelton Ave","c":"Statesville","z":"28677","p":"704-872-7677","t":"PANTRY","h":"Tu & W: 11:30a - 2:30p; Th: 2:30p - 4p; F: 9:30a - 12:30p","lat":35.77059,"lng":-80.89109},{"n":"SYBA Food Pantry","a":"1423 W Front St.","c":"Statesville","z":"28677","p":"704.873.4372","t":"PANTRY","h":"by appointment Tu: 4p-5:30p, Th: 9:30a-11a","lat":35.78271,"lng":-80.88763},{"n":"Union Grove UMC","a":"1331 Sloans Mill Rd","c":"Union Grove","z":"28689","p":"704 539-4394","t":"PANTRY","h":"Th: 2p - 6p (2nd and 4th Thursday of each month)","lat":35.99775,"lng":-80.8765},{"n":"A Place of Grace","a":"133 W. Wainman Ave","c":"Asheboro","z":"27203","p":"336.318.0012","t":"SHELTER","h":"Please call for availability","lat":35.71363,"lng":-79.81387},{"n":"Brandie's Pantry","a":"1063 Walden Rd.","c":"Asheboro","z":"27205","p":"336.267.4623","t":"PANTRY","h":"Th: 4p-5:30p","lat":35.7489,"lng":-79.89245},{"n":"Christians United Outreach Center","a":"930 S. Fayetteville St.","c":"Asheboro","z":"27203","p":"336.625.1500","t":"PANTRY","h":"M & Tu: 10a - 3p; Th: 12p-6p; F: 10a - 2p","lat":35.71311,"lng":-79.81558},{"n":"Reach Church","a":"909 Meadowbrook Rd","c":"Asheboro","z":"27203","p":"336.629.3101","t":"PANTRY","h":"3rd Wednesday of each month: 5p - 6:30p","lat":35.70441,"lng":-79.80846},{"n":"The Salvation Army - Asheboro","a":"345 N Church St","c":"Asheboro","z":"27203","p":"336.625.0551","t":"PANTRY","h":"M - F: 9a - 4p","lat":35.71395,"lng":-79.81695},{"n":"Beulah Baptist Church","a":"7239 NC Hwy 22-42","c":"Bennett","z":"27208","p":"336.581.3121","t":"PANTRY","h":"3rd Saturday of each month: 10a - 12p","lat":35.59449,"lng":-79.58691},{"n":"Liberty Association of Churches","a":"329 B West Bowman Avenue","c":"Liberty","z":"27298","p":"336.622.8312","t":"PANTRY","h":"M & Th: 2p - 5p","lat":35.85728,"lng":-79.56356},{"n":"Midway United Missionary Church","a":"307 S Stout St","c":"Randleman","z":"27317","p":"336.498.7580","t":"PANTRY","h":"T, W, Sa, Su: 5p - 7p; Th & F: by appt only","lat":35.81339,"lng":-79.80811},{"n":"Grace Point UPC","a":"4872 Old Edgar Rd","c":"High Point","z":"27263","p":"336.523.9269","t":"PANTRY","h":"2nd Saturday of each month: 10a - 12p","lat":35.92608,"lng":-79.97015},{"n":"The Salvation Army - Eden","a":"314 Morgan Rd.","c":"Eden","z":"27360","p":"336.627.4177","t":"PANTRY","h":"M - F: 12:30p - 2:30p","lat":35.88749,"lng":-80.07558},{"n":"Draper PHC - Hope Outreach Ctr","a":"204 S. Bethel St","c":"Eden","z":"27288","p":"336.635.1990","t":"PANTRY","h":"3rd Saturday of month 9a - 11a","lat":36.49926,"lng":-79.76434},{"n":"The Salvation Army - Eden","a":"314 Morgan Rd","c":"Eden","z":"27288","p":"336.627.4177","t":"SOUP KITCHEN","h":"M - F: 12:30p - 1:15p","lat":36.50072,"lng":-79.77111},{"n":"The Salvation Army - Reidsville","a":"704 Barnes Street","c":"Reidsville","z":"27320","p":"336.349.4923","t":"PANTRY","h":"M, W, Th, F: 9a - 12p","lat":36.34482,"lng":-79.67719},{"n":"Rockingham Hope","a":"3692 NC Hwy 14","c":"Reidsville","z":"27288","p":"336.623.2133","t":"PANTRY","h":"T - F: 9a - 12p","lat":36.49274,"lng":-79.7689},{"n":"Reidsville Outreach Center","a":"435 SW Market St","c":"Reidsville","z":"27320","p":"336.342.7770","t":"PANTRY","h":"Th: 9a - 12p (bi-weekly)","lat":36.35144,"lng":-79.66869},{"n":"In His Name Christian Services","a":"1863 S Park Dr","c":"Reidsville","z":"27320","p":"336.349.2088","t":"PANTRY","h":"W: 9a - 12p","lat":36.35647,"lng":-79.66352},{"n":"Cornerstone Christian Center Food Pantry","a":"516 N Scales St","c":"Reidsville","z":"27320","p":"336.681.6855","t":"PANTRY","h":"W: 10a - 1p","lat":36.34948,"lng":-79.66553},{"n":"CORMII CDC","a":"1309-D Northup St","c":"Reidsville","z":"27320","p":"336.497.1601","t":"PANTRY","h":"Th: 4p-5p and emergencies as needed","lat":36.3412,"lng":-79.67755},{"n":"God's Helping Hands Pantry","a":"4933 NC Highway 770","c":"Stoneville","z":"27048","p":"336.573.9467","t":"PANTRY","h":"F: 11a - 1p","lat":36.47371,"lng":-79.91036},{"n":"LOT 2540, Inc.","a":"103 Stone St.","c":"Stoneville","z":"27048","p":"336-447-3873","t":"PANTRY","h":"Last Saturday of each month: 10a - 12p","lat":36.46908,"lng":-79.90616},{"n":"LOT 2540, Inc.","a":"103 Stone St.","c":"Stoneville","z":"27048","p":"336-447-3873","t":"SOUP KITCHEN","h":"Tu - Sa: 12p - 1p","lat":36.46908,"lng":-79.90616},{"n":"Brethren Bistro","a":"730 Church St.","c":"Eden","z":"27288","p":"336-627-7063","t":"SOUP KITCHEN","h":"2nd & 4th Sa: 12p-1:30p","lat":36.50138,"lng":-79.77469},{"n":"King Outreach Ministry","a":"413 Kingsway Dr","c":"King","z":"27021","p":"336.983.4357","t":"PANTRY","h":"M - F: 9a - 11:30a","lat":36.27482,"lng":-80.36678},{"n":"The Rock Church","a":"416 W King Street","c":"King","z":"27021","p":"336.467.4627","t":"PANTRY","h":"Th: 5p - 7p (3rd Thursday of each month)","lat":36.27371,"lng":-80.35536},{"n":"East Stokes Outreach Ministry","a":"301 West Third St","c":"Walnut Cove","z":"27052","p":"336.591.3237","t":"PANTRY","h":"M - F: 9a - 11:30a","lat":36.30313,"lng":-80.15013},{"n":"Francisco Presbyterian Church","a":"7257 NC Hwy 89 W","c":"Westfield","z":"27053","p":"336.593.3757","t":"PANTRY","h":"M: 9a - 5p (2nd and 4th Monday of each month)","lat":36.46591,"lng":-80.54441},{"n":"Foothills Food Pantry","a":"233 Cooper St","c":"Dobson","z":"27017","p":"336.386.8405","t":"PANTRY","h":"M: 6p - 7p; Tu & Th: 9a - 12:15p","lat":36.39447,"lng":-80.74239},{"n":"ECHO Ministry-The Ark Homeless","a":"130 Hill Street","c":"Elkin","z":"28621","p":"336.527.1637","t":"SHELTER","h":"Please call for availability","lat":36.24868,"lng":-80.84975},{"n":"Tri-County Christian Crisis Ministry","a":"290 N Bridge St.","c":"Elkin","z":"28642","p":"336.526.1089","t":"PANTRY","h":"M: 1p - 4p; W & F: 9a - 12p","lat":36.24982,"lng":-80.85157},{"n":"Greater Mt Airy Ministry of Hospitality - Shepherd's House","a":"246 Spring St","c":"Mt. Airy","z":"27030","p":"336.786.1420","t":"SHELTER","h":"Please call for availability","lat":36.50553,"lng":-80.61559},{"n":"Helping Hands Foundation of Surry","a":"227 Rockford St","c":"Mt. Airy","z":"27030","p":"336.673.0216","t":"PANTRY","h":"M - F: 9a - 3p","lat":36.4993,"lng":-80.60967},{"n":"Iglesia Pentecostal Cristo Viene","a":"126 Lynnhaven Rd.","c":"Mt. Airy","z":"27030","p":"336.710.0952","t":"PANTRY","h":"Please call for availability","lat":36.5062,"lng":-80.61639},{"n":"The Salvation Army - Mt Airy","a":"651 S South Street","c":"Mt. Airy","z":"27030","p":"336.786.4075","t":"PANTRY","h":"M - Th: 9a - 4p; F: 9a - 12p (Appt.)","lat":36.50611,"lng":-80.60825},{"n":"Trinity Episcopal Church","a":"427 N Main St","c":"Mt. Airy","z":"27030","p":"336.786.6067","t":"PANTRY","h":"Th: 8:30a - 9:30a","lat":36.49703,"lng":-80.61139},{"n":"Yokefellow Ministry of Mt Airy","a":"461 N South St.","c":"Mt Airy","z":"27030","p":"336.789.5838","t":"PANTRY","h":"M - F: 9a - 11:15a","lat":36.49857,"lng":-80.61169},{"n":"SEAMS - Pilot Mountain Outreach","a":"407 US Highway 52 By-pass N","c":"Pilot Mountain","z":"27041","p":"336.368.4907","t":"PANTRY","h":"Tu - Th: 9a - 12p","lat":36.39041,"lng":-80.48128},{"n":"Blowing Rock Cares Food Pantry","a":"1218 Main St","c":"Blowing Rock","z":"28605","p":"828.532.3323","t":"PANTRY","h":"Open Wed 12/17 & Mon 12/22                                                                                           9a - 12p","lat":36.1265,"lng":-81.67921},{"n":"Casting Bread Food Market","a":"194 Aho Rd.","c":"Blowing Rock","z":"28605","p":"828.783.3510","t":"PANTRY","h":"W & Th: 10a - 3p","lat":36.1267,"lng":-81.66949},{"n":"Greenway Baptist Church","a":"880 Greenway Rd","c":"Boone","z":"28607","p":"828.264.7750","t":"PANTRY","h":"Th: 9:30a-12:30p & 3:45p-6p","lat":36.21282,"lng":-81.67266},{"n":"Hospitality House","a":"338 Brook Hollow Road","c":"Boone","z":"28607","p":"828.264.1237","t":"PANTRY / SOUP KITCHEN","h":"Pantry: M-Su: 12p - 4p; Soup Kitchen: M - Su: 6:30a - 8:30a (Breakfast), 11:30a - 1p (Lunch), 5:30p - 6:30p (Dinner)","lat":36.21763,"lng":-81.67695},{"n":"The Hunger & Health Coalition","a":"141 Health Center Dr","c":"Boone","z":"28607","p":"828.262.1628","t":"PANTRY","h":"M - F: 9a-4p","lat":36.21777,"lng":-81.66915},{"n":"Western Watauga Food Outreach","a":"120 Henson Hollar Rd.","c":"Vilas","z":"28692","p":"828.262.1628","t":"PANTRY","h":"Th: 3:30p-5p","lat":36.22284,"lng":-81.73169},{"n":"Brushy Mtn Baptist - Boomer Food Pantry","a":"149 Boomer Church Road","c":"Boomer","z":"28606","p":"336.903.1414","t":"PANTRY","h":"Sa: 9a - 11:30a (2nd Saturday of each month)","lat":35.90479,"lng":-81.37536},{"n":"Anchor Ridge","a":"1137 River Rd Liberty Grove Rd","c":"North Wilkesboro","z":"28659","p":"336.468.0998","t":"PANTRY","h":"M - F: 10a-4p","lat":36.1823,"lng":-81.14566},{"n":"BROC: Wilkes Community Action","a":"710 Veterans Drive","c":"North Wilkesboro","z":"28659","p":"336.667.7174","t":"PANTRY","h":"M - F: 8:30a-4:00p","lat":36.19798,"lng":-81.15055},{"n":"Brushy Mtn Baptist - Wilkes Min of Hope","a":"514 Elkin Highway","c":"North Wilkesboro","z":"28659","p":"336.262.7224","t":"PANTRY","h":"M, Tu & Th: 9a - 1p","lat":36.19377,"lng":-81.14224},{"n":"Maple Springs United Methodist Church","a":"15733 Hwy 268","c":"Ronda","z":"28670","p":"336.336.9375","t":"PANTRY","h":"Tu: 4p - 5:30p (3rd Tuesday of each month)","lat":36.20575,"lng":-80.94954},{"n":"MBL- Antioch Baptist Church","a":"12164 Elkin Hwy #268 Ronda VFD","c":"Ronda","z":"28670","p":"336.984.5828","t":"PANTRY","h":"8a - 11a (4th Saturday of the month)","lat":36.20556,"lng":-80.95388},{"n":"Antioch Baptist Church","a":"1298 Antioch Church Rd","c":"Wilkesboro","z":"28697","p":"336.984.5828","t":"PANTRY","h":"Sa: 9a - 11a (3rd Saturday of each month);","lat":36.14069,"lng":-81.15368},{"n":"Ministerio Emmanuel","a":"311 Cothren St.","c":"Wilkesboro","z":"28697","p":"336.838.0107","t":"PANTRY","h":"8:30a-12:30p (4th Friday and Saturday of the month)","lat":36.14525,"lng":-81.15808},{"n":"New Damascus Baptist Church","a":"161 Damascus Church Rd","c":"Wilkesboro","z":"28697","p":"336.692.3727","t":"PANTRY","h":"1st & 3rd Saturday monthly 9:30a - 11:30a","lat":36.13945,"lng":-81.16856},{"n":"Pilgrim Baptist Church - Outreach Center","a":"493 Pilgrim Baptist Church Rd","c":"Wilkesboro","z":"28697","p":"336.927.1703","t":"PANTRY","h":"Sa: 9a - 11p (3rd Saturday of each month)","lat":36.15068,"lng":-81.15842},{"n":"Samaritan Kitchen of Wilkes","a":"4187 W US Highway 421","c":"Wilkesboro","z":"28697","p":"336.838.5331","t":"PANTRY","h":"M, W & F: 9a - 12:30p","lat":36.15304,"lng":-81.16189},{"n":"Divino Redentor Catholic Church","a":"209 Lon Ave","c":"Boonville","z":"27011","p":"336.367.7067","t":"PANTRY","h":"Tu, Th, Sa: 6p - 8p","lat":36.22934,"lng":-80.69038},{"n":"Yadkin Christian Ministries - East Bend","a":"118 Hwy 67","c":"East Bend","z":"27018","p":"336.699.4544","t":"PANTRY","h":"Tu: 5:30p - 7:30p; Th - 10a - 12p; Sa: 10a - 12p","lat":36.20122,"lng":-80.52628},{"n":"Yadkin Christian Ministries","a":"117 Woodlyn Dr","c":"Yadkinville","z":"27055","p":"336.677.3080","t":"PANTRY","h":"M: 4:30p - 6:45p; Tu - F: 9a - 11:45a","lat":36.13096,"lng":-80.6638}];
+
+let LOCATIONS = [];
+let dataLoaded = false;
+
+async function loadData() {
+  // Show loading state
+  const list = document.getElementById('resultsList');
+  const count = document.getElementById('resultsCount');
+  count.textContent = lang === 'es' ? 'Cargando programas...' : 'Loading programs...';
+  list.innerHTML = `
+    <div class="empty-state">
+      <div class="loading-spinner"></div>
+      <h3>${lang === 'es' ? 'Cargando...' : 'Loading...'}</h3>
+      <p>${lang === 'es' ? 'Obteniendo ubicaciones de programas' : 'Fetching program locations'}</p>
+    </div>`;
+
+  // Try Suitelet first
+  if (SUITELET_URL && SUITELET_URL !== 'YOUR_SUITELET_URL_HERE') {
+    try {
+      const response = await fetch(SUITELET_URL, { mode: 'cors' });
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          LOCATIONS = data;
+          dataLoaded = true;
+          console.log('Food Finder: Loaded ' + LOCATIONS.length + ' locations from NetSuite');
+          initApp();
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Food Finder: Suitelet fetch failed, using fallback data.', e.message);
+    }
+  }
+
+  // Fall back to embedded data
+  LOCATIONS = FALLBACK_DATA;
+  dataLoaded = true;
+  console.log('Food Finder: Using fallback data (' + LOCATIONS.length + ' locations)');
+  initApp();
+}
+
+async function initApp() {
+  LOCATIONS = await geocodeAllLocations(LOCATIONS);
+  filteredLocations = [...LOCATIONS];
+  initMap();
+  renderResults(LOCATIONS);
+}
+
+// ── GOOGLE GEOCODING (via Maps JavaScript API) ──
+const GEO_CACHE_KEY = 'foodfinder_geocache_v2';
+const geocoder = new google.maps.Geocoder();
+
+function getGeoCache() {
+  try {
+    return JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function setGeoCache(cache) {
+  try { localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(cache)); } catch {}
+}
+
+function geocodeAddress(address) {
+  return new Promise((resolve) => {
+    geocoder.geocode({ address: address }, (results, status) => {
+      if (status === 'OK' && results.length > 0) {
+        const loc = results[0].geometry.location;
+        resolve({ lat: loc.lat(), lng: loc.lng() });
+      } else {
+        if (status !== 'ZERO_RESULTS') {
+          console.warn('Geocode failed:', address, status);
+        }
+        resolve(null);
+      }
+    });
+  });
+}
+
+async function geocodeAllLocations(locations) {
+  const cache = getGeoCache();
+  const toGeocode = [];
+
+  // Check cache first
+  locations.forEach((loc, i) => {
+    const key = `${loc.a}, ${loc.c}, NC ${loc.z}`;
+    if (cache[key]) {
+      loc.lat = cache[key].lat;
+      loc.lng = cache[key].lng;
+    } else {
+      toGeocode.push({ index: i, key: key });
+    }
+  });
+
+  if (toGeocode.length === 0) {
+    console.log('Food Finder: All locations loaded from cache (' + Object.keys(cache).length + ' entries)');
+    return locations.filter(l => l.lat && l.lng);
+  }
+
+  // Update progress
+  const count = document.getElementById('resultsCount');
+  const total = toGeocode.length;
+  let completed = 0;
+  let succeeded = 0;
+
+  // Geocode one at a time with small delay to respect rate limits
+  // Google JS API Geocoder has a ~50 req/sec limit
+  for (let i = 0; i < toGeocode.length; i++) {
+    const item = toGeocode[i];
+    try {
+      const result = await geocodeAddress(item.key);
+      if (result) {
+        locations[item.index].lat = result.lat;
+        locations[item.index].lng = result.lng;
+        cache[item.key] = result;
+        succeeded++;
+      }
+    } catch (e) {
+      console.warn('Geocode error for:', item.key, e.message);
+    }
+    completed++;
+    count.textContent = lang === 'es'
+      ? `Geocodificando ubicaciones... ${completed}/${total}`
+      : `Geocoding locations... ${completed}/${total}`;
+
+    // Small delay every 10 requests to avoid rate limits
+    if (completed % 10 === 0 && completed < total) {
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+
+  // Save updated cache
+  setGeoCache(cache);
+
+  // Filter out any that failed geocoding
+  const geocoded = locations.filter(l => l.lat && l.lng);
+  const skipped = locations.length - geocoded.length;
+  if (skipped > 0) console.warn(`Food Finder: ${skipped} locations could not be geocoded`);
+
+  console.log(`Food Finder: Geocoded ${succeeded}/${total} new locations, ${Object.keys(cache).length} total cached`);
+  return geocoded;
+}
+
+async function geocodeZip(zip) {
+  const cache = getGeoCache();
+  const key = `ZIP:${zip}`;
+  if (cache[key]) return cache[key];
+
+  const result = await geocodeAddress(`${zip}, USA`);
+  if (result) {
+    cache[key] = result;
+    setGeoCache(cache);
+  }
+  return result;
+}
+
+// ── STATE ──
+let map, markers = [], searchCircle = null;
+let currentFilter = 'ALL';
+let filteredLocations = [];
+let searchLat = null, searchLng = null, searchRadius = 10;
+let activeCardId = null;
+
+// ── INIT MAP ──
+function initMap() {
+  map = L.map('map', { zoomControl: true }).setView([36.05, -80.25], 8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18
+  }).addTo(map);
+  renderMarkers(LOCATIONS);
+}
+
+// ── DISTANCE CALC (Haversine) ──
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 3958.8; // miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ── MARKER CREATION ──
+function getMarkerClass(type) {
+  if (type.includes('PANTRY') && type.includes('SOUP')) return 'combo';
+  if (type.includes('SOUP')) return 'soup';
+  if (type.includes('SHELTER')) return 'shelter';
+  return 'pantry';
+}
+function getMarkerIcon(type) {
+  if (type.includes('SOUP')) return '🍲';
+  if (type.includes('SHELTER')) return '🏠';
+  return '🥫';
+}
+function createMarkerIcon(type) {
+  const cls = getMarkerClass(type);
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div class="marker-pin ${cls}"><span class="marker-inner">${getMarkerIcon(type)}</span></div>`,
+    iconSize: [32, 42],
+    iconAnchor: [16, 42],
+    popupAnchor: [0, -44]
+  });
+}
+
+function renderMarkers(locs) {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  locs.forEach((loc, i) => {
+    const m = L.marker([loc.lat, loc.lng], { icon: createMarkerIcon(loc.t) });
+    const phone = loc.p ? `<p>📞 <a href="tel:${loc.p.replace(/[^0-9+]/g, '')}">${loc.p}</a></p>` : '';
+    m.bindPopup(`
+      <div class="popup-inner">
+        <h4>${loc.n}</h4>
+        <p>📍 ${loc.a}, ${loc.c}, NC ${loc.z}</p>
+        ${phone}
+        <p>🕐 ${loc.h}</p>
+      </div>
+    `);
+    m.on('click', () => {
+      highlightCard(i);
+    });
+    m.addTo(map);
+    markers.push(m);
+  });
+}
+
+// ── RENDER RESULTS ──
+let displayCount = 18;
+
+function renderCard(loc, i) {
+  const badgeCls = loc.t.includes('SHELTER') ? 'badge-shelter' : loc.t.includes('SOUP') && loc.t.includes('PANTRY') ? 'badge-combo' : loc.t.includes('SOUP') ? 'badge-soup' : 'badge-pantry';
+  const badgeText = loc.t.includes('SHELTER') ? t('typeShelter') : loc.t.includes('SOUP') && loc.t.includes('PANTRY') ? t('typeCombo') : loc.t.includes('SOUP') ? t('typeSoup') : t('typePantry');
+  const dist = loc._dist != null ? `<div class="card-distance">📍 ${t('milesAway')(loc._dist.toFixed(1))}</div>` : '';
+  const addr = `${loc.a}, ${loc.c}, NC ${loc.z}`;
+  const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`;
+  const phoneLink = loc.p ? `<div class="card-detail card-phone"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg><a href="tel:${loc.p.replace(/[^0-9+]/g, '')}">${loc.p}</a></div>` : '';
+  return `
+    <div class="card" data-idx="${i}" onclick="focusLocation(${i})">
+      <div class="card-top">
+        <div class="card-name">${loc.n}</div>
+        <span class="card-badge ${badgeCls}">${badgeText}</span>
+      </div>
+      <div class="card-detail">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span>${addr}</span>
+      </div>
+      ${phoneLink}
+      <div class="card-detail">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>${loc.h}</span>
+      </div>
+      ${dist}
+      <a class="card-directions" href="${dirUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        ${t('getDirections')}
+      </a>
+    </div>`;
+}
+
+function renderResults(locs) {
+  const list = document.getElementById('resultsList');
+  const count = document.getElementById('resultsCount');
+  displayCount = 18;
+
+  if (locs.length === 0) {
+    count.textContent = t('noResults');
+    list.innerHTML = `
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        <h3>${t('noResults')}</h3>
+        <p>${t('noResultsTip')}</p>
+      </div>`;
+    return;
+  }
+
+  count.textContent = t('locationsFound')(locs.length);
+  const visible = locs.slice(0, displayCount);
+  const remaining = locs.length - displayCount;
+
+  list.innerHTML = visible.map((loc, i) => renderCard(loc, i)).join('');
+
+  if (remaining > 0) {
+    list.innerHTML += `<div class="show-more-wrap"><button class="show-more-btn" onclick="showMore()">${t('showMore')(Math.min(remaining, 18), locs.length)}</button></div>`;
+  }
+}
+
+function showMore() {
+  displayCount += 18;
+  const list = document.getElementById('resultsList');
+  const visible = filteredLocations.slice(0, displayCount);
+  const remaining = filteredLocations.length - displayCount;
+
+  list.innerHTML = visible.map((loc, i) => renderCard(loc, i)).join('');
+
+  if (remaining > 0) {
+    list.innerHTML += `<div class="show-more-wrap"><button class="show-more-btn" onclick="showMore()">${t('showMore')(Math.min(remaining, 18), filteredLocations.length)}</button></div>`;
+  }
+}
+
+// ── SEARCH ──
+async function performSearch() {
+  const zip = document.getElementById('zipInput').value.trim();
+  searchRadius = parseInt(document.getElementById('radiusSelect').value);
+
+  if (!zip) {
+    searchLat = null;
+    searchLng = null;
+    applyFilters();
+    return;
+  }
+
+  if (!/^\d{5}$/.test(zip)) {
+    alert(t('badZip'));
+    return;
+  }
+
+  try {
+    const result = await geocodeZip(zip);
+    if (result) {
+      searchLat = result.lat;
+      searchLng = result.lng;
+      applyFilters();
+    } else {
+      alert(t('zipNotFound'));
+    }
+  } catch (e) {
+    alert(t('zipError'));
+  }
+}
+
+function applyFilters() {
+  let locs = [...LOCATIONS];
+
+  // Type filter
+  if (currentFilter !== 'ALL') {
+    locs = locs.filter(l => l.t.includes(currentFilter));
+  }
+
+  // Distance filter
+  if (searchLat != null && searchLng != null) {
+    locs = locs.map(l => ({
+      ...l,
+      _dist: haversine(searchLat, searchLng, l.lat, l.lng)
+    }));
+
+    if (searchRadius < 999) {
+      locs = locs.filter(l => l._dist <= searchRadius);
+    }
+
+    locs.sort((a, b) => a._dist - b._dist);
+
+    // Draw search circle
+    if (searchCircle) map.removeLayer(searchCircle);
+    if (searchRadius < 999) {
+      searchCircle = L.circle([searchLat, searchLng], {
+        radius: searchRadius * 1609.34,
+        color: '#1e2f6c',
+        fillColor: '#2a3d7c',
+        fillOpacity: 0.07,
+        weight: 2,
+        dashArray: '6 4'
+      }).addTo(map);
+    }
+
+    // Fit map
+    if (locs.length > 0) {
+      const group = L.featureGroup(locs.map(l => L.marker([l.lat, l.lng])));
+      // Include search point
+      group.addLayer(L.marker([searchLat, searchLng]));
+      map.fitBounds(group.getBounds().pad(0.1));
+    } else {
+      map.setView([searchLat, searchLng], 11);
+    }
+  } else {
+    locs.forEach(l => l._dist = null);
+    if (searchCircle) { map.removeLayer(searchCircle); searchCircle = null; }
+    map.setView([36.05, -80.25], 8);
+  }
+
+  filteredLocations = locs;
+  renderMarkers(locs);
+  renderResults(locs);
+}
+
+function setFilter(type) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.type === type);
+  });
+  applyFilters();
+}
+
+function focusLocation(idx) {
+  const loc = filteredLocations[idx];
+  map.setView([loc.lat, loc.lng], 15);
+  if (markers[idx]) markers[idx].openPopup();
+  highlightCard(idx);
+}
+
+function highlightCard(idx) {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  const card = document.querySelector(`.card[data-idx="${idx}"]`);
+  if (card) {
+    card.classList.add('active');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+// ── LANGUAGE SWITCH ──
+function setLang(newLang) {
+  lang = newLang;
+  // Update toggle buttons
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === newLang.toUpperCase());
+  });
+  // Update header
+  document.getElementById('headerBrand').textContent = t('brand');
+  document.getElementById('headerTitle').textContent = t('title');
+  document.getElementById('headerSub').textContent = t('subtitle');
+  // Update search
+  document.getElementById('zipInput').placeholder = t('placeholder');
+  document.getElementById('searchBtn').textContent = t('search');
+  // Update radius options
+  const sel = document.getElementById('radiusSelect');
+  sel.options[0].text = t('miles5');
+  sel.options[1].text = t('miles10');
+  sel.options[2].text = t('miles25');
+  sel.options[3].text = t('miles50');
+  sel.options[4].text = t('showAll');
+  // Update filter chips
+  const chips = document.querySelectorAll('.filter-chip');
+  chips[0].innerHTML = `<span class="filter-dot dot-all"></span> ${t('allPrograms')}`;
+  chips[1].innerHTML = `<span class="filter-dot dot-pantry"></span> ${t('pantry')}`;
+  chips[2].innerHTML = `<span class="filter-dot dot-soup"></span> ${t('soupKitchen')}`;
+  chips[3].innerHTML = `<span class="filter-dot dot-shelter"></span> ${t('shelter')}`;
+  // Re-render results
+  renderResults(filteredLocations);
+  // Update footer
+  const footerNote = document.getElementById('footerNote');
+  if (footerNote) footerNote.textContent = t('footerNote');
+}
+
+// ── ENTER KEY ──
+document.getElementById('zipInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') performSearch();
+});
+
+// ── INIT ──
+loadData();
+</script>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">Second Harvest Food Bank of Northwest North Carolina</div>
+    <div class="footer-sub">A member of the Feeding America network</div>
+    <div class="footer-links">
+      <a href="https://www.secondharvestnwnc.org" target="_blank" rel="noopener">Main Website</a>
+      <span class="footer-divider">|</span>
+      <a href="https://www.secondharvestnwnc.org/contact-us" target="_blank" rel="noopener">Contact Us</a>
+      <span class="footer-divider">|</span>
+      <a href="tel:3367848951">336-784-8951</a>
+    </div>
+    <div class="footer-note" id="footerNote">If you need immediate food assistance, please call 211 or visit one of the locations listed above.</div>
+  </div>
+</footer>
+
+</body>
+</html>
